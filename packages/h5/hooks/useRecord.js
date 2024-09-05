@@ -17,10 +17,15 @@ const useRecord = ({ isStart, maxRecordTime = 10 * 60, onUploadSuccess, timeChan
   let recordTime = 0;
   // 计时器
   let timer = null;
+  // 录音资源
+  let dataBuffer = [];
+  // 清除录音资源
+  const dataReset = () => {
+    dataBuffer = [];
+  };
 
   /**
    * 记录录音时长
-   * @returns
    */
   const handleRecordTime = (type) => {
     if (type === 'stop') {
@@ -63,10 +68,16 @@ const useRecord = ({ isStart, maxRecordTime = 10 * 60, onUploadSuccess, timeChan
         // 录音继续
         mediaRecorder.current.onresume = function (e) {
           handleRecordTime('start');
+          dataReset();
         };
         // 录音结束
         mediaRecorder.current.onstop = function (e) {
           handleRecordTime('stop');
+          onUploadSuccess(dataBuffer);
+          // 增加延时，防止 onUploadSuccess 有异步操作
+          setTimeout(() => {
+              dataReset();
+          })
         };
         // 录音错误
         mediaRecorder.current.onerror = function (e) {
@@ -74,7 +85,7 @@ const useRecord = ({ isStart, maxRecordTime = 10 * 60, onUploadSuccess, timeChan
         };
         // 录制的资源，录音结束才会触发
         mediaRecorder.current.ondataavailable = function (e) {
-          onUploadSuccess(e);
+          dataBuffer.push(e.data)
         };
 
         // 进入页面，录音器加载完后就开始录音
